@@ -5,11 +5,14 @@
 
 namespace oui
 {
-	namespace window
-	{
-		unsigned dpi();
-		inline float dpiFactor() { return dpi() / 96.0f; }
+	class Renderer;
 
+	class Window
+	{
+		std::unique_ptr<Renderer> _renderer;
+		Rectangle _area;
+		bool _open = true;
+	public:
 		struct Description
 		{
 			std::string title;
@@ -17,8 +20,19 @@ namespace oui
 			int height = 480;
 			int	sampleCount = 1;
 		};
-		Description initialize();
 
-		void update(oui::Rectangle, oui::Input&);
-	}
+		Window(const Description&);
+		~Window();
+
+		bool update();
+
+		void clear(const Color&);
+
+		bool open() const { return _open; }
+
+		unsigned dpi();
+		inline float dpiFactor() { return dpi() / 96.0f; }
+
+		const Rectangle& area() const { return _area; }
+	};
 }

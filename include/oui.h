@@ -264,4 +264,6 @@ namespace oui
 	public:
 		Pointer mouse;
 	};
+
+	extern Input input;
 }

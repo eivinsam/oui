@@ -92,24 +92,13 @@ namespace oui
 		return true;
 	}
 
-	namespace window
-	{
-		unsigned window::dpi()
-		{
-			const POINT home = { 0 ,0 };
-			UINT xdpi, ydpi;
-			GetDpiForMonitor(MonitorFromPoint(home, MONITOR_DEFAULTTOPRIMARY), MDT_DEFAULT, &xdpi, &ydpi);
-			return unsigned(sqrt(xdpi*ydpi));
-		}
-	}
-
-	class Window
+	class SystemWindow
 	{
 		friend class Renderer;
 		HWND _wnd;
 		HDC _dc;
 	public:
-		Window(const window::Description& desc, std::optional<int> custom_pixel_format = std::nullopt)
+		SystemWindow(const Window::Description& desc, std::optional<int> custom_pixel_format = std::nullopt)
 		{
 			static HINSTANCE hInstance = 0;
 
@@ -155,9 +144,9 @@ namespace oui
 			if (SetPixelFormat(_dc, pf, &pfd) == FALSE)
 				throw std::runtime_error("SetPixelFormat() failed:  Cannot set format specified");
 		}
-		Window(const Window&) = delete;
-		Window(Window&& b) : _wnd(b._wnd), _dc(b._dc) { b._wnd = NULL; b._dc = NULL; }
-		~Window()
+		SystemWindow(const SystemWindow&) = delete;
+		SystemWindow(SystemWindow&& b) : _wnd(b._wnd), _dc(b._dc) { b._wnd = NULL; b._dc = NULL; }
+		~SystemWindow()
 		{
 			if (_dc != NULL)
 				ReleaseDC(_wnd, _dc);
@@ -177,7 +166,7 @@ namespace oui
 	{
 		HGLRC _rc;
 
-		static std::optional<int> maybe_fancy_format(const window::Description& desc)
+		static std::optional<int> maybe_fancy_format(const Window::Description& desc)
 		{
 			if (desc.sampleCount <= 1)
 				return std::nullopt;
@@ -210,9 +199,9 @@ namespace oui
 			return format;
 		}
 	public:
-		Window window;
+		SystemWindow window;
 
-		Renderer(const window::Description& desc) : window(desc, maybe_fancy_format(desc))
+		Renderer(const Window::Description& desc) : window(desc, maybe_fancy_format(desc))
 		{
 			static bool glew_inited = false;
 
@@ -234,34 +223,54 @@ namespace oui
 			}
 		}
 	};
-}
-
-int APIENTRY
-WinMain(HINSTANCE hCurrentInst, HINSTANCE hPreviousInst,
-		LPSTR lpszCmdLine, int nCmdShow)
-{
-	SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE);
-
-	oui::Renderer renderer(oui::window::initialize());
-
-
-	renderer.window.show(nCmdShow);
-
-	while (oui::dispatchMessages())
+	Window::Window(const Description& desc)
 	{
+		SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE);
+		_renderer = std::make_unique<Renderer>(desc);
+		_renderer->window.show(true);
+	}
+	Window::~Window() { }
+
+	bool Window::update()
+	{
+		_open = oui::dispatchMessages();
+		_renderer->window.swapBuffers();
+		glFlush();
+		input.mouse.takeAll();
+		if (!_open)
+			return false;
+
 		GLint viewport[4];
 		glGetIntegerv(GL_VIEWPORT, viewport);
-		oui::Rectangle area =
+		_area = 
 		{
 			{ float(viewport[0]), float(viewport[1]) },
 			{ float(viewport[0] + viewport[2]), float(viewport[1] + viewport[3]) }
 		};
 
-		oui::window::update(area, oui::input);
-		renderer.window.swapBuffers();
-		glFlush();
-		oui::input.mouse.takeAll();
-	}
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	return 0;
+
+
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		gluOrtho2D(_area.min.x, _area.max.x, _area.max.y, _area.min.x);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+
+		return true;
+	}
+	void Window::clear(const Color & c)
+	{
+		glClearColor(c.r, c.g, c.b, 1);
+		glClear(GL_COLOR_BUFFER_BIT);
+	}
+	unsigned Window::dpi()
+	{
+		const POINT home = { 0 ,0 };
+		UINT xdpi, ydpi;
+		GetDpiForMonitor(MonitorFromPoint(home, MONITOR_DEFAULTTOPRIMARY), MDT_DEFAULT, &xdpi, &ydpi);
+		return unsigned(sqrt(xdpi*ydpi));
+	}
 }

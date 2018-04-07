@@ -16,7 +16,7 @@ namespace oui
 		HFONT _font;
 		unsigned _tex;
 		int _size;
-		int _next_offset;
+		int _next_offset = 0;
 		struct GlyphInfo
 		{
 			float offset;
