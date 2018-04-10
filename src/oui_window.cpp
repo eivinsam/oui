@@ -266,7 +266,7 @@ namespace oui
 		glClearColor(c.r, c.g, c.b, 1);
 		glClear(GL_COLOR_BUFFER_BIT);
 	}
-	unsigned Window::dpi()
+	unsigned Window::dpi() const
 	{
 		const POINT home = { 0 ,0 };
 		UINT xdpi, ydpi;

@@ -37,5 +37,7 @@ namespace oui
 		{
 			return drawText(area, text, height, color);
 		}
+
+		int height() const { return _size; }
 	};
 }

@@ -30,8 +30,8 @@ namespace oui
 
 		bool open() const { return _open; }
 
-		unsigned dpi();
-		inline float dpiFactor() { return dpi() / 96.0f; }
+		unsigned dpi() const;
+		inline float dpiFactor() const { return dpi() / 96.0f; }
 
 		const Rectangle& area() const { return _area; }
 	};
