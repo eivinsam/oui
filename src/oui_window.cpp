@@ -79,9 +79,11 @@ namespace oui
 		}
 	}
 
-	bool dispatchMessages()
+	bool dispatchMessages(Window::Messages blocking)
 	{
 		MSG   msg;				/* message */
+		if (blocking == Window::Messages::wait)
+			WaitMessage();
 		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			if (msg.message == WM_QUIT)
@@ -153,7 +155,7 @@ namespace oui
 			if (_wnd != NULL)
 			{
 				DestroyWindow(_wnd);
-				dispatchMessages();
+				dispatchMessages(Window::Messages::peek);
 			}
 		}
 
@@ -210,7 +212,7 @@ namespace oui
 
 			if (!glew_inited)
 				glew_inited = glewInit() == GLEW_OK;
-
+			wglSwapIntervalEXT(1);
 		}
 		Renderer(Renderer&& b) : _rc(b._rc), window(std::move(b.window)) { b._rc = NULL; }
 		Renderer(const Renderer&) = delete;
@@ -231,11 +233,11 @@ namespace oui
 	}
 	Window::~Window() { }
 
-	bool Window::update()
+	bool Window::update(Messages blocking)
 	{
-		_open = oui::dispatchMessages();
 		_renderer->window.swapBuffers();
 		glFlush();
+		_open = oui::dispatchMessages(blocking);
 		input.mouse.takeAll();
 		if (!_open)
 			return false;
