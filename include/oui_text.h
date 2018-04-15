@@ -6,38 +6,24 @@
 
 #include <oui.h>
 
-struct HFONT__;
-typedef HFONT__* HFONT;
-
 namespace oui
 {
 	class Font
 	{
-		HFONT _font;
-		unsigned _tex;
-		int _size;
-		int _next_offset = 0;
-		struct GlyphInfo
-		{
-			float offset;
-			float width;
-		};
-		std::unordered_map<int, GlyphInfo> _glyphs;
+		class Data;
+		std::shared_ptr<Data> _data;
 
-		const GlyphInfo& _init_glyph(int ch);
-
-		float _draw_glyph(int ch, Point p, float height);
 	public:
 		Font(const std::string& name, int size);
-		Font(const Font&) = delete;
-		~Font();
 
-		Point drawText(const Rectangle&, std::string_view, float height = 0, const Color& = colors::white);
-		Point drawText(const Rectangle& area, std::string_view text, const Color& color, float height = 0) 
+		void drawLine(const Point& start, std::string_view, float height = 0, const Color& = colors::white);
+		void drawLine(const Point& start, std::string_view text, const Color& color, float height = 0) 
 		{
-			return drawText(area, text, height, color);
+			return drawLine(start, text, height, color);
 		}
 
-		int height() const { return _size; }
+		float offset(std::string_view text, float height = 0);
+
+		int height() const;
 	};
 }

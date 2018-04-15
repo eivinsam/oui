@@ -52,12 +52,14 @@ namespace oui
 
 	struct Vector
 	{
-		float x;
-		float y;
+		float x = 0;
+		float y = 0;
 	};
 
 	inline constexpr Vector operator+(Vector a, Vector b) { return { a.x + b.x, a.y + b.y }; }
-	inline constexpr Vector operator-(Vector a, Vector b) { return { a.x + b.x, a.y + b.y }; }
+	inline constexpr Vector operator-(Vector a, Vector b) { return { a.x - b.x, a.y - b.y }; }
+	inline constexpr Vector operator*(Vector a, Vector b) { return { a.x * b.x, a.y * b.y }; }
+	inline constexpr Vector operator/(Vector a, Vector b) { return { a.x / b.x, a.y / b.y }; }
 
 	inline constexpr Vector operator*(Vector v, float c) { return { v.x*c, v.y*c }; }
 	inline constexpr Vector operator*(float c, Vector v) { return { v.x*c, v.y*c }; }
@@ -71,8 +73,8 @@ namespace oui
 	struct Rectangle;
 	struct Point
 	{
-		float x;
-		float y;
+		float x = 0;
+		float y = 0;
 
 		constexpr bool in(const Rectangle&) const;
 	};
@@ -94,6 +96,7 @@ namespace oui
 
 		constexpr Point center() const { return min + (max - min) / 2; }
 
+		Rectangle popLeft(int dx) { return popLeft(float(dx)); }
 		Rectangle popLeft(float dx)
 		{
 			dx = oui::min(dx, width());
@@ -101,6 +104,7 @@ namespace oui
 			min.x += dx;
 			return { { oldx, min.y }, { min.x, max.y } };
 		}
+		Rectangle popRight(int dx) { return popRight(float(dx)); }
 		Rectangle popRight(float dx)
 		{
 			dx = oui::min(dx, width());
@@ -109,6 +113,7 @@ namespace oui
 			return { { max.x, min.y }, { oldx, max.y } };
 		}
 
+		Rectangle popTop(int dx) { return popTop(float(dx)); }
 		Rectangle popTop(float dy)
 		{ 
 			dy = oui::min(dy, height());
@@ -116,6 +121,7 @@ namespace oui
 			min.y += dy; 
 			return { { min.x, oldy }, { max.x, min.y } }; 
 		}
+		Rectangle popBottom(int dx) { return popBottom(float(dx)); }
 		Rectangle popBottom(float dy)
 		{
 			dy = oui::min(dy, height());
@@ -150,6 +156,10 @@ namespace oui
 			return { { min.x + dx, min.y + dy }, { max.x - dx, max.y - dy } };
 		}
 	};
+
+	inline constexpr Rectangle operator+(const Rectangle& r, Vector v) { return { r.min + v, r.max + v }; }
+	inline constexpr Rectangle operator+(Vector v, const Rectangle& r) { return { r.min + v, r.max + v }; }
+
 	void fill(const Rectangle&, const Color&);
 
 	inline constexpr bool Point::in(const Rectangle& area) const
@@ -158,6 +168,43 @@ namespace oui
 			area.min.x <= x && x < area.max.x &&
 			area.min.y <= y && y < area.max.y;
 	}
+
+	struct FromPoint;
+	struct Align
+	{
+		Vector c;
+
+		constexpr Point min(Point point, Vector size) const { return point - c * size; }
+		constexpr Point max(Point point, Vector size) const { return point + (Vector{1, 1} - c)*size; }
+
+		constexpr FromPoint operator()(Point) const;
+		constexpr FromPoint operator()(Rectangle) const;
+	};
+	struct FromPoint
+	{
+		Point point;
+		Align align;
+
+		constexpr Rectangle size(Vector size) const
+		{
+			return { align.min(point, size), align.max(point, size) };
+		}
+	};
+	inline constexpr FromPoint Align::operator()(Point p) const { return { p, *this }; }
+	inline constexpr FromPoint Align::operator()(Rectangle r) const
+	{
+		return { r.min + c * (r.max - r.min), *this };
+	}
+
+	static constexpr Align topLeft{ 0.0f, 0.0f };
+	static constexpr Align topCenter{ 0.5f, 0.0f };
+	static constexpr Align topRight{ 1.0f, 0.0f };
+	static constexpr Align centerLeft{ 0.0f, 0.5f };
+	static constexpr Align center{ 0.5f, 0.5f };
+	static constexpr Align centerRight{ 1.0f, 0.5f };
+	static constexpr Align bottomLeft{ 0.0f, 1.0f };
+	static constexpr Align bottomCenter{ 0.5f, 1.0f };
+	static constexpr Align bottomRight{ 1.0f, 1.0f };
 
 	template <class T>
 	using Optional = std::optional<T>;

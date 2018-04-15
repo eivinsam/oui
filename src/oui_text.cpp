@@ -1,38 +1,114 @@
+#include "..\include\oui_text.h"
 #include <oui_text.h>
 
 #include <stdexcept>
 #include <memory>
 
+
 #include <GL/glew.h>
 
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
+
+static struct FreeTypeInit
+{
+	FT_Library lib;
+
+	FreeTypeInit()
+	{
+		FT_Init_FreeType(&lib);
+	}
+	~FreeTypeInit()
+	{
+
+	}
+} freetype;
 
 namespace oui
 {
-	using uchar = unsigned char;
-
 	static constexpr int font_texture_width = 2048;
 
-	Font::Font(const std::string& name, int size) : _size(size)
+	class Font::Data
 	{
-		_font = CreateFontA(_size, 0, 0, 0, FW_DONTCARE, 0, 0, 0, ANSI_CHARSET,
-			OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DRAFT_QUALITY, FF_DONTCARE, name.c_str());
+		friend class Font;
 
-		glGenTextures(1, &_tex);
-		glBindTexture(GL_TEXTURE_2D, _tex);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA4, font_texture_width, _size, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		FT_Face _face;
+		unsigned _tex;
+		const int _size;
+		int _asc; // Ascender in pixels
+		int _dsc; // Descender in pixels
+		int _next_offset = 0;
+		struct GlyphInfo
+		{
+			float offset;
+			float width;
+			int advance;
+			int left;
+		};
+		std::unordered_map<int, GlyphInfo> _glyphs;
+
+		const GlyphInfo& _init_glyph(int ch, bool drawing);
+
+		float _draw_glyph(int ch, Point p, float height);
+	public:
+		Data(const std::string& name, int size) : _size(size)
+		{
+			FT_New_Face(freetype.lib, name.c_str(), 0, &_face);
+
+			//FT_Set_Char_Size(
+			//	_face,    /* handle to face object           */
+			//	0,       /* char_width in 1/64th of points  */
+			//	size * 64,   /* char_height in 1/64th of points */
+			//	300,     /* horizontal device resolution    */
+			//	300);   /* vertical device resolution      */
+
+			FT_Set_Pixel_Sizes(
+				_face,    /* handle to face object */
+				0,        /* pixel_width           */
+				_size);   /* pixel_height          */
+
+			_asc = _face->size->metrics.ascender >> 6;
+			_dsc = _face->size->metrics.descender >> 6;
+
+			glGenTextures(1, &_tex);
+			glBindTexture(GL_TEXTURE_2D, _tex);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA4, font_texture_width, _asc-_dsc, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		}
+		~Data()
+		{
+			glDeleteTextures(1, &_tex);
+
+		}
+
+		float offset(std::string_view text, float height);
+
+		void drawLine(const Point& start, std::string_view text, float height, const Color& color);
+	};
+
+	using uchar = unsigned char;
+
+	Font::Font(const std::string& name, int size) : _data(std::make_shared<Data>(name, size)) { }
+
+	void Font::drawLine(const Point & start, std::string_view text, float height, const Color & color)
+	{
+		if (_data)
+			_data->drawLine(start, text, height, color);
 	}
 
-	Font::~Font()
+	float Font::offset(std::string_view text, float height)
 	{
-		glDeleteTextures(1, &_tex);
-		DeleteObject(_font);
+		return !_data ? 0.0f : _data->offset(text, height);
+	}
+
+	int Font::height() const
+	{
+		return !_data ? 0 : _data->_size;
 	}
 
 	int popCodepoint(std::string_view& text)
@@ -74,11 +150,11 @@ namespace oui
 		return code;
 	}
 
-	Point Font::drawText(const Rectangle & area, std::string_view text, float height, const Color& color)
+	void Font::Data::drawLine(const Point& start, std::string_view text, float height, const Color& color)
 	{
 		if (height == 0)
 			height = float(_size);
-		Point head = area.min;
+		Point head = start;
 
 		glEnable(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, _tex);
@@ -86,52 +162,43 @@ namespace oui
 		glColor4fv(&color.r);
 		glBegin(GL_QUADS);
 		while (int ch = popCodepoint(text))
-			head.x = _draw_glyph(ch, head, height);
+			head.x = _draw_glyph(ch, head, height/_size);
 		glEnd();
 
 		glDisable(GL_TEXTURE_2D);
-
-		return head;
 	}
-	float Font::_draw_glyph(int ch, Point p, float height)
+	float Font::Data::offset(std::string_view text, float height)
 	{
-		auto& info = _init_glyph(ch);
+		const float factor = (height == 0 ? 1 : (height / _size));
+
+		float result = 0;
+		while (int ch = popCodepoint(text))
+			result += _init_glyph(ch, false).advance*factor;
+		return result;
+	}
+	float Font::Data::_draw_glyph(int ch, Point p, float factor)
+	{
+		auto& info = _init_glyph(ch, true);
 
 		const auto s0 = info.offset;
 		const auto s1 = info.width + s0;
 
-		const float width = info.width * font_texture_width * (height / _size);
+		const float lift = (_asc - _dsc - _size)*factor;
+		const float left = info.left*factor;
+
+		const float width = info.width * font_texture_width * factor;
 		const float x_1 = p.x + width;
-		const float y_1 = p.y + height;
+		const float y_1 = p.y + _size*factor;
 
-		glTexCoord2f(s0, 0); glVertex2f(p.x, y_1);
-		glTexCoord2f(s1, 0); glVertex2f(x_1, y_1);
-		glTexCoord2f(s1, 1); glVertex2f(x_1, p.y);
-		glTexCoord2f(s0, 1); glVertex2f(p.x, p.y);
+		glTexCoord2f(s0, 1); glVertex2f(p.x+left, y_1 - lift * float(_dsc) / (_asc - _dsc));
+		glTexCoord2f(s1, 1); glVertex2f(x_1+left, y_1 - lift * float(_dsc) / (_asc - _dsc));
+		glTexCoord2f(s1, 0); glVertex2f(x_1+left, p.y - lift * float(_asc) / (_asc - _dsc));
+		glTexCoord2f(s0, 0); glVertex2f(p.x+left, p.y - lift * float(_asc) / (_asc - _dsc));
 
-		return x_1;
+		return p.x + info.advance * factor;
 	}
 
-	HBITMAP rgb_bitmap(HDC dc, int width, int height, void** data)
-	{
-		BITMAPINFO bmpi;
-		bmpi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-		bmpi.bmiHeader.biWidth = width;
-		bmpi.bmiHeader.biHeight = height;
-		bmpi.bmiHeader.biPlanes = 1;
-		bmpi.bmiHeader.biBitCount = 24;
-		bmpi.bmiHeader.biCompression = BI_RGB;
-		bmpi.bmiHeader.biSizeImage = 0;
-		bmpi.bmiHeader.biXPelsPerMeter = 0;
-		bmpi.bmiHeader.biYPelsPerMeter = 0;
-		bmpi.bmiHeader.biClrUsed = 0;
-		bmpi.bmiHeader.biClrImportant = 0;
-
-		HBITMAP bmp = CreateDIBSection(dc, &bmpi, DIB_RGB_COLORS, data, NULL, 0);
-		return bmp;
-	}
-
-	const Font::GlyphInfo& Font::_init_glyph(int ch)
+	const Font::Data::GlyphInfo& Font::Data::_init_glyph(int ch, bool drawing)
 	{
 		auto info = _glyphs.find(ch);
 		if (info == _glyphs.end())
@@ -143,52 +210,27 @@ namespace oui
 				str[0] = wchar_t((chm >> 10) + 0xd800);
 				str[1] = wchar_t((chm & ((1 << 10) - 1)) + 0xdc00);
 			}
-			const int yoff = 0;//MulDiv(height,1,16);
-			HDC dc = CreateCompatibleDC(NULL);
-			SelectObject(dc, _font);
-			RECT r;
-			SetRect(&r, 1, 1 + yoff, 256, _size);
-			DrawTextW(dc, str, 1, &r, DT_CALCRECT);
-			int width = (r.right - r.left);
+			FT_UInt  glyph_index = FT_Get_Char_Index(_face, ch);
+			FT_Load_Glyph(_face, glyph_index, FT_LOAD_DEFAULT);
+			FT_Render_Glyph(_face->glyph, FT_RENDER_MODE_NORMAL);
 
-			int width_ceil = (width + 3) & 0xfffffffc;
+			const auto& bitmap = _face->glyph->bitmap;
+			const int width = bitmap.width;
 
-			char* data = NULL;
-			HBITMAP bmp = rgb_bitmap(dc, width_ceil, _size, (void**)&data);
-			SelectObject(dc, bmp);
-			SetBkColor(dc, RGB(0, 0, 0));
-			SetTextColor(dc, RGB(255, 255, 255));
-			//SetRect(&r, 0,0,width,height);
-			DrawTextW(dc, str, 1, &r, DT_NOCLIP);
-			GdiFlush();
-
-			{
-				auto img = std::make_unique<unsigned char[]>(width*_size * 4);
-
-				unsigned char* ii = img.get();
-				for (int i = 0; i < _size; ++i)
-				{
-					unsigned char* di = (unsigned char*)(data + i * width_ceil * 3);
-					for (int j = 0; j < width; ++j)
-					{
-						j; // confuse the compler warning away!
-						*ii = 255; ++ii;
-						*ii = 255; ++ii;
-						*ii = 255; ++ii;
-						*ii = *di; ++ii;
-						di += 3;
-					}
-				}
-				glEnd();
-				glTexSubImage2D(GL_TEXTURE_2D, 0, _next_offset, 0, width, _size, GL_RGBA, GL_UNSIGNED_BYTE, img.get());
-				glBegin(GL_QUADS);
-			}
-			DeleteObject(dc);
-			DeleteObject(bmp);
+			if (drawing) glEnd();
+			else         glBindTexture(GL_TEXTURE_2D, _tex);
+			const auto yoff = _asc - _face->glyph->bitmap_top;
+			glTexSubImage2D(GL_TEXTURE_2D, 0, _next_offset, yoff, 
+				bitmap.pitch, 
+				bitmap.rows, GL_ALPHA, GL_UNSIGNED_BYTE, bitmap.buffer);
+			if (drawing) glBegin(GL_QUADS);
+				
 
 			GlyphInfo new_info;
 			new_info.offset = float(_next_offset) / font_texture_width;
 			new_info.width = float(width) / font_texture_width;
+			new_info.advance = _face->glyph->advance.x>>6;
+			new_info.left = _face->glyph->bitmap_left;
 
 			_next_offset += width + 1;
 
