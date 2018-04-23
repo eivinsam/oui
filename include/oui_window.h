@@ -13,7 +13,6 @@ namespace oui
 		Rectangle _area;
 		bool _open = true;
 	public:
-		enum class Messages : char { peek, wait };
 
 		struct Description
 		{
@@ -26,7 +25,8 @@ namespace oui
 		Window(const Description&);
 		~Window();
 
-		bool update(Messages);
+
+		bool update();
 
 		void clear(const Color&);
 

@@ -26,33 +26,43 @@ namespace oui
 	{
 		static std::unordered_map<UINT, std::string> msg_names =
 		{
-			{ WM_PAINT, "WM_PAINT" },
-			{ WM_CLOSE, "WM_CLOSE" },
-			{ WM_DESTROY, "WM_DESTROY" },
-			{ WM_QUIT, "WM_QUIT" },
-			{ WM_CHAR, "WM_CHAR "},
-			{ WM_MOUSEMOVE, "WM_MOUSEMOVE" },
-			{ WM_LBUTTONDOWN, "WM_LBUTTONDOWN" },
-			{ WM_LBUTTONUP, "WM_LBUTTONUP" },
-			{ WM_RBUTTONDOWN, "WM_RBUTTONDOWN" },
-			{ WM_RBUTTONUP, "WM_RBUTTONUP" }
+		{ WM_PAINT, "WM_PAINT" },
+		{ WM_CLOSE, "WM_CLOSE" },
+		{ WM_DESTROY, "WM_DESTROY" },
+		{ WM_QUIT, "WM_QUIT" },
+		{ WM_COMMAND, "WM_COMMAND" },
+		{ WM_CHAR, "WM_CHAR "},
+		{ WM_SIZE, "WM_SIZE" },
+		{ WM_ENTERSIZEMOVE, "WM_ENTERSIZEMOVE" },
+		{ WM_EXITSIZEMOVE, "WM_EXITSIZEMOVE" },
+		{ WM_MOUSEMOVE, "" },
+		{ WM_LBUTTONDOWN, "WM_LBUTTONDOWN" },
+		{ WM_LBUTTONUP, "WM_LBUTTONUP" },
+		{ WM_RBUTTONDOWN, "WM_RBUTTONDOWN" },
+		{ WM_RBUTTONUP, "WM_RBUTTONUP" },
+		{ WM_NCHITTEST, "" },
+		{ WM_SETCURSOR, "" }
 		};
 		auto found = msg_names.find(msg);
-		if (found != msg_names.end())
-			debug::println(found->second);
-		else
+		if (found == msg_names.end())
 			debug::println(std::to_string(msg));
+		else if (!found->second.empty())
+			debug::println(found->second);
 
 		auto get_point_lparam = [](LPARAM p) { return oui::Point{ float(GET_X_LPARAM(p)), float(GET_Y_LPARAM(p)) }; };
 
-		switch (msg) {
-			//case WM_PAINT:
-			//	return 0;
-
+		switch (msg) 
+		{
 		case WM_SIZE:
-			glViewport(0, 0, LOWORD(lParam), HIWORD(lParam));
+			if (wParam != SIZE_MINIMIZED)
+			{
+				glViewport(0, 0, LOWORD(lParam), HIWORD(lParam));
+				RedrawWindow(wnd, nullptr, nullptr, RDW_INTERNALPAINT);
+			}
 			return 0;
-
+		case WM_EXITSIZEMOVE:
+			RedrawWindow(wnd, nullptr, nullptr, RDW_INTERNALPAINT);
+			return 0;
 		case WM_CHAR:
 			return 0;
 		case WM_DESTROY:
@@ -79,19 +89,18 @@ namespace oui
 		}
 	}
 
-	bool dispatchMessages(Window::Messages blocking)
+	bool dispatchMessages()
 	{
 		MSG   msg;				/* message */
-		if (blocking == Window::Messages::wait)
-			WaitMessage();
-		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		int status;
+		while ((status = GetMessage(&msg, NULL, 0,0)) > 0)
 		{
-			if (msg.message == WM_QUIT)
-				return false;
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
+			if (msg.message == WM_PAINT)
+				return true;
 		}
-		return true;
+		return status == 0 && msg.message != WM_QUIT;
 	}
 
 	class SystemWindow
@@ -155,7 +164,8 @@ namespace oui
 			if (_wnd != NULL)
 			{
 				DestroyWindow(_wnd);
-				dispatchMessages(Window::Messages::peek);
+				//PostMessage(NULL, WM_PAINT, 0, 0);
+				//dispatchMessages();
 			}
 		}
 
@@ -233,11 +243,11 @@ namespace oui
 	}
 	Window::~Window() { }
 
-	bool Window::update(Messages blocking)
+	bool Window::update()
 	{
 		_renderer->window.swapBuffers();
 		glFlush();
-		_open = oui::dispatchMessages(blocking);
+		_open = oui::dispatchMessages();
 		input.mouse.takeAll();
 		if (!_open)
 			return false;
