@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <chrono>
+#include <functional>
 
 namespace oui
 {
@@ -70,14 +71,26 @@ namespace oui
 
 	inline float angle(Vector a, Vector b) { return acos(dot(a, b) / sqrt(dot(a, a)*dot(b, b))); }
 
+	static constexpr struct {} origo;
+
 	struct Rectangle;
 	struct Point
 	{
 		float x = 0;
 		float y = 0;
 
+		constexpr Point() = default;
+		constexpr Point(decltype(origo)) { }
+		constexpr Point(float x, float y) : x(x), y(y) { }
+
 		constexpr bool in(const Rectangle&) const;
 	};
+
+	inline constexpr Point operator+(Vector v, decltype(origo)) { return { v.x, v.y }; }
+	inline constexpr Point operator+(decltype(origo), Vector v) { return { v.x, v.y }; }
+
+	inline constexpr Vector operator-(Point p, decltype(origo)) { return { +p.x, +p.y }; }
+	inline constexpr Vector operator-(decltype(origo), Point p) { return { -p.x, -p.y }; }
 
 	inline constexpr Point operator+(Point p, Vector v) { return { p.x + v.x, p.y + v.y }; }
 	inline constexpr Point operator-(Point p, Vector v) { return { p.x - v.x, p.y - v.y }; }
@@ -306,10 +319,24 @@ namespace oui
 		}
 	};
 
+	enum class Key
+	{
+		lButton = 1, rButton, cancel, mButton,
+		backspace = 0x8, tab,
+		left = 0x25, up, right, down,
+		ins = 0x2d, del
+	};
+
 	class Input
 	{
 	public:
+		template <class... Args>
+		using Handler = std::function<void(Args...)>;
+
 		Pointer mouse;
+
+		Handler<Key> keydown;
+		Handler<int> character;
 	};
 
 	extern Input input;
