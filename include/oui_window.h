@@ -10,9 +10,9 @@ namespace oui
 	class Window
 	{
 		std::unique_ptr<Renderer> _renderer;
-		Rectangle _area;
 		bool _open = true;
 	public:
+		Vector size;
 
 		struct Description
 		{
@@ -35,6 +35,12 @@ namespace oui
 		unsigned dpi() const;
 		inline float dpiFactor() const { return dpi() / 96.0f; }
 
-		const Rectangle& area() const { return _area; }
+		Rectangle area() const { return topLeft(origo).size(size); }
+
+		bool focus() const;
+
+		void redraw();
+
+		Input::Handler<Vector> resize;
 	};
 }

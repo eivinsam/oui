@@ -21,17 +21,24 @@ namespace oui
 {
 	Input input;
 
-	LONG WINAPI
-		WindowProc(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam)
+	HWND _focus_wnd = nullptr;
+
+	std::unordered_map<HWND, Window*> windows;
+
+	class SystemWindow;
+	LONG WINAPI WindowProc(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 		static std::unordered_map<UINT, std::string> msg_names =
 		{
-		{ WM_PAINT, "WM_PAINT" },
+			{ WM_PAINT, "WM_PAINT" },
 		{ WM_CLOSE, "WM_CLOSE" },
 		{ WM_DESTROY, "WM_DESTROY" },
 		{ WM_QUIT, "WM_QUIT" },
 		{ WM_COMMAND, "WM_COMMAND" },
-		{ WM_CHAR, "WM_CHAR "},
+		{ WM_WINDOWPOSCHANGED, "WM_WINDOWPOSCHANGED" },
+		{ WM_CHAR, "WM_CHAR " },
+		{ WM_KEYDOWN, "WM_KEYDOWN "},
+		{ WM_KEYUP, "WM_KEYUP" },
 		{ WM_SIZE, "WM_SIZE" },
 		{ WM_ENTERSIZEMOVE, "WM_ENTERSIZEMOVE" },
 		{ WM_EXITSIZEMOVE, "WM_EXITSIZEMOVE" },
@@ -40,7 +47,10 @@ namespace oui
 		{ WM_LBUTTONUP, "WM_LBUTTONUP" },
 		{ WM_RBUTTONDOWN, "WM_RBUTTONDOWN" },
 		{ WM_RBUTTONUP, "WM_RBUTTONUP" },
+		{ WM_SETFOCUS, "WM_SETFOCUS" },
+		{ WM_KILLFOCUS, "WM_KILLFOCUS" },
 		{ WM_NCHITTEST, "" },
+		{ WM_NCMOUSEMOVE, "" },
 		{ WM_SETCURSOR, "" }
 		};
 		auto found = msg_names.find(msg);
@@ -50,23 +60,71 @@ namespace oui
 			debug::println(found->second);
 
 		auto get_point_lparam = [](LPARAM p) { return oui::Point{ float(GET_X_LPARAM(p)), float(GET_Y_LPARAM(p)) }; };
+		auto get_vector_lparam = [](LPARAM p) { return oui::Vector{ float(GET_X_LPARAM(p)), float(GET_Y_LPARAM(p)) }; };
 
-		switch (msg) 
+		const auto window = [wnd] 
+		{ 
+			auto found = windows.find(wnd); 
+			return found == windows.end() ? nullptr : found->second; 
+		}();
+
+		static bool in_sizemove = false;
+		static const auto apply_size = [](HWND wnd, Window& window)
 		{
-		case WM_SIZE:
-			if (wParam != SIZE_MINIMIZED)
+			debug::println(std::to_string(window.size.x) + "x" + std::to_string(window.size.y));
+			glViewport(0, 0, GLsizei(window.size.x), GLsizei(window.size.y));
+
+			if (window.resize)
+				window.resize(window.size);
+
+			RedrawWindow(wnd, nullptr, nullptr, RDW_INTERNALPAINT);
+		};
+
+		switch (msg)
+		{
+		case WM_WINDOWPOSCHANGED:
+		{
+			auto info = reinterpret_cast<WINDOWPOS*>(lParam);
+
+			if (IsIconic(wnd))
+				return 0;
+
+			if ((info->flags & SWP_SHOWWINDOW) ||
+				(info->flags & SWP_NOSIZE) == 0)
 			{
-				glViewport(0, 0, LOWORD(lParam), HIWORD(lParam));
-				RedrawWindow(wnd, nullptr, nullptr, RDW_INTERNALPAINT);
+				if (window)
+				{
+					RECT cr;
+					GetClientRect(wnd, &cr);
+					window->size = { float(cr.right - cr.left), float(cr.bottom - cr.top) };
+					if (!in_sizemove)
+						apply_size(wnd, *window);
+				}
 			}
+			return 0; // DefWindowProc(wnd, msg, wParam, lParam);
+		}
+		case WM_ENTERSIZEMOVE:
+			in_sizemove = true;
 			return 0;
 		case WM_EXITSIZEMOVE:
-			RedrawWindow(wnd, nullptr, nullptr, RDW_INTERNALPAINT);
+			in_sizemove = false;
+			if (window)
+				apply_size(wnd, *window);
 			return 0;
 		case WM_CHAR:
+			if (input.character)
+				input.character(wParam);
 			return 0;
 		case WM_DESTROY:
 			PostQuitMessage(0);
+			return 0;
+		case WM_SETFOCUS:
+			_focus_wnd = wnd;
+			RedrawWindow(wnd, nullptr, nullptr, RDW_INTERNALPAINT);
+			return 0;
+		case WM_KILLFOCUS:
+			_focus_wnd = nullptr;
+			RedrawWindow(wnd, nullptr, nullptr, RDW_INTERNALPAINT);
 			return 0;
 		case WM_MOUSEMOVE:
 			input.mouse.move(get_point_lparam(lParam));
@@ -84,6 +142,9 @@ namespace oui
 			ReleaseCapture();
 			input.mouse.release(get_point_lparam(lParam));
 			return 0;
+		case WM_KEYDOWN:
+			if (input.keydown)
+				input.keydown(static_cast<Key>(wParam));
 		default:
 			return DefWindowProc(wnd, msg, wParam, lParam);
 		}
@@ -163,15 +224,28 @@ namespace oui
 				ReleaseDC(_wnd, _dc);
 			if (_wnd != NULL)
 			{
+				windows.erase(_wnd);
 				DestroyWindow(_wnd);
 				//PostMessage(NULL, WM_PAINT, 0, 0);
 				//dispatchMessages();
 			}
 		}
 
+		void registrate(Window& w) { windows[_wnd] = &w; }
+
 		void show(int mode) const { ShowWindow(_wnd, mode); }
 
-		void swapBuffers() const { SwapBuffers(_dc); }
+		void swapBuffers() const
+		{
+			SwapBuffers(_dc);
+		}
+
+		bool focus() const { return _focus_wnd == _wnd; }
+
+		void requestRedraw()
+		{
+			RedrawWindow(_wnd, nullptr, nullptr, RDW_INTERNALPAINT);
+		}
 	};
 
 	class Renderer
@@ -239,6 +313,7 @@ namespace oui
 	{
 		SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE);
 		_renderer = std::make_unique<Renderer>(desc);
+		_renderer->window.registrate(*this);
 		_renderer->window.show(true);
 	}
 	Window::~Window() { }
@@ -252,14 +327,6 @@ namespace oui
 		if (!_open)
 			return false;
 
-		GLint viewport[4];
-		glGetIntegerv(GL_VIEWPORT, viewport);
-		_area = 
-		{
-			{ float(viewport[0]), float(viewport[1]) },
-			{ float(viewport[0] + viewport[2]), float(viewport[1] + viewport[3]) }
-		};
-
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -267,7 +334,7 @@ namespace oui
 
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		gluOrtho2D(_area.min.x, _area.max.x, _area.max.y, _area.min.x);
+		gluOrtho2D(0, size.x, size.y, 0);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
 
@@ -284,5 +351,13 @@ namespace oui
 		UINT xdpi, ydpi;
 		GetDpiForMonitor(MonitorFromPoint(home, MONITOR_DEFAULTTOPRIMARY), MDT_DEFAULT, &xdpi, &ydpi);
 		return unsigned(sqrt(xdpi*ydpi));
+	}
+	bool Window::focus() const
+	{
+		return _renderer->window.focus();
+	}
+	void Window::redraw()
+	{
+		_renderer->window.requestRedraw();
 	}
 }
