@@ -323,7 +323,8 @@ namespace oui
 	{
 		lButton = 1, rButton, cancel, mButton,
 		backspace = 0x8, tab,
-		left = 0x25, up, right, down,
+		enter = 0xd,
+		space = 0x20, pgup, pgdn, end, home, left, up, right, down,
 		ins = 0x2d, del
 	};
 
