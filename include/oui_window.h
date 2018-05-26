@@ -35,7 +35,7 @@ namespace oui
 		unsigned dpi() const;
 		inline float dpiFactor() const { return dpi() / 96.0f; }
 
-		Rectangle area() const { return topLeft(origo).size(size); }
+		Rectangle area() const { return align::topLeft(origo).size(size); }
 
 		bool focus() const;
 

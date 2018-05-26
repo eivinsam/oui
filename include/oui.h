@@ -182,10 +182,27 @@ namespace oui
 			area.min.y <= y && y < area.max.y;
 	}
 
-	struct FromPoint;
+	struct FromScalar;
 	struct Align
 	{
+		float c;
+
+		constexpr float min(float x, float w) const { return x - c * w;	}
+		constexpr float max(float x, float w) const { return x + (1 - c)*w; }
+
+	};
+
+
+
+	struct FromPoint;
+	struct Align2
+	{
 		Vector c;
+
+		constexpr Align2() = default;
+		constexpr Align2(Vector c) : c{ c } { }
+		constexpr Align2(float cx, float cy) : c{cx, cy} { }
+		constexpr Align2(Align a) : c{ a.c, a.c } { }
 
 		constexpr Point min(Point point, Vector size) const { return point - c * size; }
 		constexpr Point max(Point point, Vector size) const { return point + (Vector{1, 1} - c)*size; }
@@ -196,28 +213,34 @@ namespace oui
 	struct FromPoint
 	{
 		Point point;
-		Align align;
+		Align2 align;
 
 		constexpr Rectangle size(Vector size) const
 		{
 			return { align.min(point, size), align.max(point, size) };
 		}
 	};
-	inline constexpr FromPoint Align::operator()(Point p) const { return { p, *this }; }
-	inline constexpr FromPoint Align::operator()(Rectangle r) const
+	inline constexpr FromPoint Align2::operator()(Point p) const { return { p, *this }; }
+	inline constexpr FromPoint Align2::operator()(Rectangle r) const
 	{
 		return { r.min + c * (r.max - r.min), *this };
 	}
 
-	static constexpr Align topLeft{ 0.0f, 0.0f };
-	static constexpr Align topCenter{ 0.5f, 0.0f };
-	static constexpr Align topRight{ 1.0f, 0.0f };
-	static constexpr Align centerLeft{ 0.0f, 0.5f };
-	static constexpr Align center{ 0.5f, 0.5f };
-	static constexpr Align centerRight{ 1.0f, 0.5f };
-	static constexpr Align bottomLeft{ 0.0f, 1.0f };
-	static constexpr Align bottomCenter{ 0.5f, 1.0f };
-	static constexpr Align bottomRight{ 1.0f, 1.0f };
+	namespace align
+	{
+		static constexpr Align min{ 0.0f };
+		static constexpr Align max{ 1.0f };
+		static constexpr Align center{ 0.5f };
+
+		static constexpr Align2 topLeft{ 0.0f, 0.0f };
+		static constexpr Align2 topCenter{ 0.5f, 0.0f };
+		static constexpr Align2 topRight{ 1.0f, 0.0f };
+		static constexpr Align2 centerLeft{ 0.0f, 0.5f };
+		static constexpr Align2 centerRight{ 1.0f, 0.5f };
+		static constexpr Align2 bottomLeft{ 0.0f, 1.0f };
+		static constexpr Align2 bottomCenter{ 0.5f, 1.0f };
+		static constexpr Align2 bottomRight{ 1.0f, 1.0f };
+	}
 
 	template <class T>
 	using Optional = std::optional<T>;
