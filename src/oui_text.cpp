@@ -106,9 +106,9 @@ namespace oui
 		return !_data ? 0.0f : _data->offset(text, height);
 	}
 
-	int Font::height() const
+	float Font::height() const
 	{
-		return !_data ? 0 : _data->_size;
+		return static_cast<float>(!_data ? 0 : _data->_size);
 	}
 
 	int popCodepoint(std::string_view& text)

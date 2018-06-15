@@ -30,12 +30,12 @@ namespace oui
 
 		void clear(const Color&);
 
-		bool open() const { return _open; }
+		constexpr bool open() const { return _open; }
 
 		unsigned dpi() const;
 		inline float dpiFactor() const { return dpi() / 96.0f; }
 
-		Rectangle area() const { return align::topLeft(origo).size(size); }
+		constexpr Rectangle area() const { return align::topLeft(origo).size(size); }
 
 		bool focus() const;
 

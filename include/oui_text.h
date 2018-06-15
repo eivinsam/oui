@@ -24,6 +24,6 @@ namespace oui
 
 		float offset(std::string_view text, float height = 0);
 
-		int height() const;
+		float height() const;
 	};
 }

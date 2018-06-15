@@ -21,9 +21,9 @@ namespace oui
 
 	inline constexpr Color operator+(const Color& a, const Color& b) { return { a.r + b.r, a.g + b.g, a.b + b.b, a.a + b.a }; }
 
-	inline constexpr Color operator*(const Color& c, double s) { auto fs = float(s); return { c.r*fs, c.g*fs, c.b*fs, c.a*fs }; }
-	inline constexpr Color operator*(double s, const Color& c) { auto fs = float(s); return { c.r*fs, c.g*fs, c.b*fs, c.a*fs }; }
-	inline constexpr Color operator/(const Color& c, double s) { auto fs = float(s); return { c.r/fs, c.g/fs, c.b/fs, c.a/fs }; }
+	inline constexpr Color operator*(const Color& c, double s) { const auto fs = static_cast<float>(s); return { c.r*fs, c.g*fs, c.b*fs, c.a*fs }; }
+	inline constexpr Color operator*(double s, const Color& c) { const auto fs = static_cast<float>(s); return { c.r*fs, c.g*fs, c.b*fs, c.a*fs }; }
+	inline constexpr Color operator/(const Color& c, double s) { const auto fs = static_cast<float>(s); return { c.r/fs, c.g/fs, c.b/fs, c.a/fs }; }
 
 	namespace colors
 	{
@@ -69,7 +69,7 @@ namespace oui
 	inline constexpr float   dot(Vector a, Vector b) { return a.x*b.x + a.y*b.y; }
 	inline constexpr float cross(Vector a, Vector b) { return a.x*b.y - a.y*b.x; }
 
-	inline float angle(Vector a, Vector b) { return acos(dot(a, b) / sqrt(dot(a, a)*dot(b, b))); }
+	inline float angle(Vector a, Vector b) noexcept { return acos(dot(a, b) / sqrt(dot(a, a)*dot(b, b))); }
 
 	static constexpr struct {} origo;
 
@@ -109,16 +109,16 @@ namespace oui
 
 		constexpr Point center() const { return min + (max - min) / 2; }
 
-		Rectangle popLeft(int dx) { return popLeft(float(dx)); }
-		Rectangle popLeft(float dx)
+		constexpr Rectangle popLeft(int   dx) { return popLeft(static_cast<float>(dx)); }
+		constexpr Rectangle popLeft(float dx)
 		{
 			dx = oui::min(dx, width());
 			const float oldx = min.x;
 			min.x += dx;
 			return { { oldx, min.y }, { min.x, max.y } };
 		}
-		Rectangle popRight(int dx) { return popRight(float(dx)); }
-		Rectangle popRight(float dx)
+		constexpr Rectangle popRight(int   dx) { return popRight(static_cast<float>(dx)); }
+		constexpr Rectangle popRight(float dx)
 		{
 			dx = oui::min(dx, width());
 			const float oldx = max.x;
@@ -126,16 +126,16 @@ namespace oui
 			return { { max.x, min.y }, { oldx, max.y } };
 		}
 
-		Rectangle popTop(int dx) { return popTop(float(dx)); }
-		Rectangle popTop(float dy)
+		constexpr Rectangle popTop(int   dx) { return popTop(static_cast<float>(dx)); }
+		constexpr Rectangle popTop(float dy)
 		{ 
 			dy = oui::min(dy, height());
 			const float oldy = min.y;
 			min.y += dy; 
 			return { { min.x, oldy }, { max.x, min.y } }; 
 		}
-		Rectangle popBottom(int dx) { return popBottom(float(dx)); }
-		Rectangle popBottom(float dy)
+		constexpr Rectangle popBottom(int   dx) { return popBottom(static_cast<float>(dx)); }
+		constexpr Rectangle popBottom(float dy)
 		{
 			dy = oui::min(dy, height());
 			const float oldy = max.y;
@@ -143,12 +143,12 @@ namespace oui
 			return { { min.x, max.y }, { max.x, oldy } };
 		}
 
-		Rectangle popLeft(Ratio f)   { return popLeft(width()*f); }
-		Rectangle popRight(Ratio f)  { return popRight(width()*f); }
-		Rectangle popTop(Ratio f)    { return popTop(height()*f); }
-		Rectangle popBottom(Ratio f) { return popBottom(height()*f); }
+		constexpr Rectangle popLeft(Ratio f)   { return popLeft(width()*f); }
+		constexpr Rectangle popRight(Ratio f)  { return popRight(width()*f); }
+		constexpr Rectangle popTop(Ratio f)    { return popTop(height()*f); }
+		constexpr Rectangle popBottom(Ratio f) { return popBottom(height()*f); }
 
-		Rectangle shrink(float trim) const
+		constexpr Rectangle shrink(float trim) const
 		{
 			Rectangle r = *this;
 			r.min.x += trim;
@@ -161,7 +161,7 @@ namespace oui
 				r.min.y = r.max.y = (r.min.y + r.max.y) / 2;
 			return *this;
 		}
-		Rectangle shrink(Ratio f) const
+		constexpr Rectangle shrink(Ratio f) const
 		{
 			f.value = oui::max(0, oui::min(f.value, 1));
 			const float dx = width()*f;
@@ -246,12 +246,12 @@ namespace oui
 	using Optional = std::optional<T>;
 	using Time = std::chrono::time_point<std::chrono::high_resolution_clock>;
 
-	inline Time now() { return std::chrono::high_resolution_clock::now(); }
+	inline Time now() noexcept { return std::chrono::high_resolution_clock::now(); }
 	
-	inline float duration(Time t0, Time t1) { return std::chrono::duration<float>(t1 - t0).count(); }
+	inline float duration(Time t0, Time t1) noexcept { return std::chrono::duration<float>(t1 - t0).count(); }
 
 	template <class T>
-	Optional<T> pop(Optional<T>& op)
+	Optional<T> pop(Optional<T>& op) noexcept
 	{
 		Optional<T> result;
 		std::swap(op, result);
@@ -267,7 +267,7 @@ namespace oui
 		};
 		struct Down : Context
 		{
-			Down(Time time, Point point) : Context{ time, point } { }
+			constexpr Down(Time time, Point point) : Context{ time, point } { }
 			Optional<Context> up;
 		};
 		Optional<Context> _current;
@@ -295,7 +295,7 @@ namespace oui
 		}
 
 		// Reset all complete states
-		void takeAll()
+		void takeAll() noexcept
 		{
 			_delta = std::nullopt;
 			if (_button && _button->up)
@@ -303,21 +303,21 @@ namespace oui
 		}
 
 
-		bool hovering(const Rectangle& area) const { return _current && _current->position.in(area); }
-		Optional<Point> holding(const Rectangle& area) const
+		bool hovering(const Rectangle& area) const noexcept { return _current && _current->position.in(area); }
+		Optional<Point> holding(const Rectangle& area) const noexcept
 		{
 			if (_button && _button->position.in(area))
 				return _current->position;
 			return std::nullopt;
 		}
-		Optional<Vector> dragging(const Rectangle& area)
+		Optional<Vector> dragging(const Rectangle& area) noexcept
 		{
 			if (holding(area))
 				return pop(_delta);
 			return std::nullopt;
 		}
 
-		Optional<Point> pressed(const Rectangle& area)
+		Optional<Point> pressed(const Rectangle& area) noexcept
 		{
 			if (holding(area) && 
 				_button->up && _button->up->position.in(area) &&
@@ -329,7 +329,7 @@ namespace oui
 			}
 			return std::nullopt;
 		}
-		bool longPressed(const Rectangle& area)
+		bool longPressed(const Rectangle& area) noexcept
 		{
 			if (holding(area) && 
 				_button->up && _button->up->position.in(area) &&
