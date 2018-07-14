@@ -51,10 +51,13 @@ namespace oui
 		friend constexpr float operator*(Ratio f, float x) { return f.value*x; }
 	};
 
+
 	struct Vector
 	{
 		float x = 0;
 		float y = 0;
+
+		constexpr Vector& operator+=(Vector v) { x += v.x; y += v.y; return *this; }
 	};
 
 	inline constexpr Vector operator+(Vector a, Vector b) { return { a.x + b.x, a.y + b.y }; }
@@ -84,6 +87,8 @@ namespace oui
 		constexpr Point(float x, float y) : x(x), y(y) { }
 
 		constexpr bool in(const Rectangle&) const;
+
+		constexpr Point& operator+=(Vector v) { x += v.x; y += v.y; return *this; }
 	};
 
 	inline constexpr Point operator+(Vector v, decltype(origo)) { return { v.x, v.y }; }
@@ -172,6 +177,8 @@ namespace oui
 
 	inline constexpr Rectangle operator+(const Rectangle& r, Vector v) { return { r.min + v, r.max + v }; }
 	inline constexpr Rectangle operator+(Vector v, const Rectangle& r) { return { r.min + v, r.max + v }; }
+
+	inline constexpr Rectangle operator-(const Rectangle& r, Vector v) { return { r.min - v, r.max - v }; }
 
 	void fill(const Rectangle&, const Color&);
 
