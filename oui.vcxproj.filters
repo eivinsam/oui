@@ -30,6 +30,12 @@
     <ClCompile Include="src\oui_window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\gpc\gpc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\oui_text_vector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\oui.h">
@@ -43,6 +49,9 @@
     </ClInclude>
     <ClInclude Include="include\oui_window.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\oui_text_internal.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

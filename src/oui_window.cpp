@@ -30,16 +30,25 @@ namespace oui
 	{
 		static std::unordered_map<UINT, std::string> msg_names =
 		{
-			{ WM_PAINT, "WM_PAINT" },
+		{ WM_NULL	 , "WM_NULL"     },
+		{ WM_CREATE	 , "WM_CREATE"   },
+		{ WM_DESTROY , "WM_DESTROY"  },
+		{ WM_MOVE	 , "WM_MOVE"     },
+		{ WM_SIZE	 , "WM_SIZE"     },
+		{ WM_ACTIVATE, "WM_ACTIVATE" },
+		{ WM_PAINT, "WM_PAINT" },
 		{ WM_CLOSE, "WM_CLOSE" },
-		{ WM_DESTROY, "WM_DESTROY" },
 		{ WM_QUIT, "WM_QUIT" },
+		{ WM_ERASEBKGND, "WM_ERASEBKGND" },
 		{ WM_COMMAND, "WM_COMMAND" },
+		{ WM_SHOWWINDOW, "WM_SHOWWINDOW" },
+		{ WM_ACTIVATEAPP, "WM_ACTIVATEAPP" },
+		{ WM_GETMINMAXINFO, "WM_GETMINMAXINFO" },
+		{ WM_WINDOWPOSCHANGING, "WM_WINDOWPOSCHANGING" },
 		{ WM_WINDOWPOSCHANGED, "WM_WINDOWPOSCHANGED" },
 		{ WM_CHAR, "WM_CHAR " },
 		{ WM_KEYDOWN, "WM_KEYDOWN "},
 		{ WM_KEYUP, "WM_KEYUP" },
-		{ WM_SIZE, "WM_SIZE" },
 		{ WM_ENTERSIZEMOVE, "WM_ENTERSIZEMOVE" },
 		{ WM_EXITSIZEMOVE, "WM_EXITSIZEMOVE" },
 		{ WM_MOUSEMOVE, "" },
@@ -49,9 +58,22 @@ namespace oui
 		{ WM_RBUTTONUP, "WM_RBUTTONUP" },
 		{ WM_SETFOCUS, "WM_SETFOCUS" },
 		{ WM_KILLFOCUS, "WM_KILLFOCUS" },
+		{ WM_NCCREATE,	"WM_NCCREATE" },
+		{ WM_NCDESTROY, "WM_NCDESTROY" },
+		{ WM_NCCALCSIZE, "WM_NCCALCSIZE" },
 		{ WM_NCHITTEST, "" },
+		{ WM_NCPAINT, "WM_NCPAINT" },
+		{ WM_NCACTIVATE, "WM_NCACTIVATE" },
 		{ WM_NCMOUSEMOVE, "" },
-		{ WM_SETCURSOR, "" }
+		{ WM_SETCURSOR, "" },
+		{ WM_GETICON, "WM_GETICON" },
+		{ 0x0090, "WM_UAHDESTROYWINDOW" },
+		{ WM_SYSKEYDOWN, "WM_SYSKEYDOWN" },
+		{ WM_SYSKEYUP  , "WM_SYSKEYUP" },
+		{ WM_SYSCOMMAND, "WM_SYSCOMMAND" },
+		{ WM_IME_SETCONTEXT, "WM_IME_SETCONTEXT" },
+		{ WM_IME_NOTIFY, "WM_IME_NOTIFY" },
+		{ WM_DWMNCRENDERINGCHANGED, "WM_DWMNCRENDERINGCHANGED" }
 		};
 		auto found = msg_names.find(msg);
 		if (found == msg_names.end())
@@ -116,7 +138,12 @@ namespace oui
 				input.character(wParam);
 			return 0;
 		case WM_DESTROY:
-			PostQuitMessage(0);
+			if (window)
+			{
+				window->close();
+				if (windows.size() == 1)
+					PostQuitMessage(0);
+			}
 			return 0;
 		case WM_SETFOCUS:
 			_focus_wnd = wnd;
@@ -161,7 +188,12 @@ namespace oui
 			if (msg.message == WM_PAINT)
 				return true;
 		}
-		return status == 0 && msg.message != WM_QUIT;
+		if (status != 0)
+			return false;
+		if (msg.message != WM_QUIT)
+			return true;
+		debug::println("WM_QUIT");
+		return false;
 	}
 
 	class SystemWindow
@@ -294,7 +326,7 @@ namespace oui
 			_rc = wglCreateContext(window._dc);
 			wglMakeCurrent(window._dc, _rc);
 
-			if (!glew_inited)
+			//if (!glew_inited)
 				glew_inited = glewInit() == GLEW_OK;
 			wglSwapIntervalEXT(1);
 		}
@@ -322,7 +354,7 @@ namespace oui
 	{
 		_renderer->window.swapBuffers();
 		glFlush();
-		_open = oui::dispatchMessages();
+		_open &= oui::dispatchMessages();
 		input.mouse.takeAll();
 		if (!_open)
 			return false;

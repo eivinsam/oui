@@ -25,11 +25,11 @@ namespace oui
 		Window(const Description&);
 		~Window();
 
-
 		bool update();
 
 		void clear(const Color&);
 
+		constexpr void close() { _open = false; }
 		constexpr bool open() const { return _open; }
 
 		unsigned dpi() const;

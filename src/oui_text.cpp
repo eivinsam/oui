@@ -1,33 +1,82 @@
-#include "..\include\oui_text.h"
-#include <oui_text.h>
+#include "oui_text_internal.h"
 
 #include <stdexcept>
 #include <memory>
+#include <array>
 
-
-#include <GL/glew.h>
-
-#include <ft2build.h>
-#include FT_FREETYPE_H
-
-
-static struct FreeTypeInit
-{
-	FT_Library lib;
-
-	FreeTypeInit()
-	{
-		FT_Init_FreeType(&lib);
-	}
-	~FreeTypeInit()
-	{
-
-	}
-} freetype;
 
 namespace oui
 {
+	using uchar = unsigned char;
+
+	int popCodepoint(std::string_view& text)
+	{
+		if (text.empty())
+			return 0;
+		int code = 0;
+		const uchar x = uchar(text.front()); text.remove_prefix(1);
+		uchar remaining = 0;
+		switch (x >> 4)
+		{
+		case 0b1111:
+			code = x & 0x7;
+			remaining = 3;
+			break;
+		case 0b1110:
+			code = x & 0xf;
+			remaining = 2;
+			break;
+		case 0b1100:
+		case 0b1101:
+			code = x & 0x1f;
+			remaining = 1;
+			break;
+		default:
+			if (x & 0x80)
+				throw std::runtime_error("unepected continuation byte");
+			return x;
+		}
+		for (; remaining > 0; --remaining)
+		{
+			if (text.empty())
+				return 0;
+			const uchar y = uchar(text.front()); text.remove_prefix(1);
+			if (y >> 6 != 2)
+				throw std::runtime_error("continuation byte expected");
+			code = (code << 6) | (y & 0x3f);
+		}
+		return code;
+	}
+
+	std::string utf8(int code)
+	{
+		std::string result;
+		if (code < 0x80)
+			result.push_back(static_cast<char>(code));
+		else if (code < 0x800)
+		{
+			result.push_back(static_cast<char>(0xc0 | (code >> 6)));
+			result.push_back(static_cast<char>(0x80 | (code & 0x3f)));
+		}
+		else if (code < 0x10000)
+		{
+			result.push_back(static_cast<char>(0xe0 | ((code >> 12) & 0x0f)));
+			result.push_back(static_cast<char>(0x80 | ((code >>  6) & 0x3f)));
+			result.push_back(static_cast<char>(0x80 | (code & 0x3f)));
+		}
+		else
+		{
+			result.push_back(static_cast<char>(0xf0 | ((code >> 18) & 0x07)));
+			result.push_back(static_cast<char>(0x80 | ((code >> 12) & 0x3f)));
+			result.push_back(static_cast<char>(0x80 | ((code >>  6) & 0x3f)));
+			result.push_back(static_cast<char>(0x80 | (code & 0x3f)));
+		}
+
+		return result;
+	}
+
 	static constexpr int font_texture_width = 2048;
+
 
 	class Font::Data
 	{
@@ -91,8 +140,6 @@ namespace oui
 		void drawLine(const Point& start, std::string_view text, float height, const Color& color);
 	};
 
-	using uchar = unsigned char;
-
 	Font::Font(const std::string& name, int size) : _data(std::make_shared<Data>(name, size)) { }
 
 	void Font::drawLine(const Point & start, std::string_view text, float height, const Color & color)
@@ -111,44 +158,6 @@ namespace oui
 		return static_cast<float>(!_data ? 0 : _data->_size);
 	}
 
-	int popCodepoint(std::string_view& text)
-	{
-		if (text.empty())
-			return 0;
-		int code = 0;
-		const uchar x = uchar(text.front()); text.remove_prefix(1);
-		uchar remaining = 0;
-		switch (x >> 4)
-		{
-		case 0b1111: 
-			code = x & 0x7;
-			remaining = 3;
-			break;
-		case 0b1110:
-			code = x & 0xf;
-			remaining = 2;
-			break;
-		case 0b1100:
-		case 0b1101:
-			code = x & 0x1f;
-			remaining = 1;
-			break;
-		default:
-			if (x & 0x80)
-				throw std::runtime_error("unepected continuation byte");
-			return x;
-		}
-		for (; remaining > 0; --remaining)
-		{
-			if (text.empty())
-				return 0;
-			const uchar y = uchar(text.front()); text.remove_prefix(1);
-			if (y >> 6 != 2)
-				throw std::runtime_error("continuation byte expected");
-			code = (code << 6) | (y & 0x3f);
-		}
-		return code;
-	}
 
 	void Font::Data::drawLine(const Point& start, std::string_view text, float height, const Color& color)
 	{
@@ -238,4 +247,5 @@ namespace oui
 		}
 		return info->second;
 	}
+
 }

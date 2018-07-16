@@ -8,6 +8,9 @@
 
 namespace oui
 {
+	int popCodepoint(std::string_view& text);
+	std::string utf8(int code);
+
 	class Font
 	{
 		class Data;
@@ -25,5 +28,21 @@ namespace oui
 		float offset(std::string_view text, float height = 0);
 
 		float height() const;
+	};
+
+	class VectorFont
+	{
+		class Data;
+		std::shared_ptr<Data> _data;
+	public:
+		VectorFont(const std::string& name);
+
+		void drawLine(const Point& start, std::string_view, float height, const Color& = colors::white);
+		void drawLine(const Point& start, std::string_view text, const Color& color, float height)
+		{
+			return drawLine(start, text, height, color);
+		}
+
+		float offset(std::string_view text, float height);
 	};
 }
