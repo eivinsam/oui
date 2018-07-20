@@ -25,6 +25,12 @@ namespace oui
 	inline constexpr Color operator*(double s, const Color& c) { const auto fs = static_cast<float>(s); return { c.r*fs, c.g*fs, c.b*fs, c.a*fs }; }
 	inline constexpr Color operator/(const Color& c, double s) { const auto fs = static_cast<float>(s); return { c.r/fs, c.g/fs, c.b/fs, c.a/fs }; }
 
+	inline constexpr Color mix(const Color& a, const Color& b, double c)
+	{
+		const auto fc = static_cast<float>(c);
+		return a * (1 - fc) + b * fc;
+	}
+
 	namespace colors
 	{
 		static constexpr Color black{ 0, 0, 0 };
