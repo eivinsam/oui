@@ -48,6 +48,25 @@ namespace oui
 		return code;
 	}
 
+	std::wstring wstr(std::string_view text)
+	{
+		std::wstring wide;
+		while (!text.empty())
+		{
+			auto cp = popCodepoint(text);
+			if (cp < 0x10000)
+			{
+				wide.push_back(static_cast<wchar_t>(cp));
+				continue;
+			}
+
+			cp -= 0x10000;
+			wide.push_back(static_cast<wchar_t>(0xd800 + (cp >> 10)));
+			wide.push_back(static_cast<wchar_t>(0xdc00 + (cp & 0x03ff)));
+		}
+		return wide;
+	}
+
 	std::string utf8(int code)
 	{
 		std::string result;

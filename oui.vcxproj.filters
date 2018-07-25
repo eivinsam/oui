@@ -53,5 +53,8 @@
     <ClInclude Include="src\oui_text_internal.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\oui_unicode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

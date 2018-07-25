@@ -41,6 +41,8 @@ namespace oui
 
 		void redraw();
 
+		void title(std::string_view text);
+
 		Input::Handler<Vector> resize;
 	};
 }

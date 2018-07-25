@@ -147,6 +147,7 @@
     <ClInclude Include="include\oui_debug.h" />
     <ClInclude Include="include\oui.h" />
     <ClInclude Include="include\oui_text.h" />
+    <ClInclude Include="include\oui_unicode.h" />
     <ClInclude Include="include\oui_window.h" />
     <ClInclude Include="src\oui_text_internal.h" />
   </ItemGroup>

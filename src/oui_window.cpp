@@ -1,3 +1,4 @@
+#include "..\include\oui_window.h"
 /* An example of the minimal Win32 & OpenGL program.  It only works in
 16 bit color modes or higher (since it doesn't create a
 palette). */
@@ -15,6 +16,7 @@ palette). */
 #pragma comment(lib, "Shcore.lib")
 
 #include <oui_window.h>
+#include <oui_unicode.h>
 #include <oui_debug.h>
 
 namespace oui
@@ -278,6 +280,11 @@ namespace oui
 		{
 			RedrawWindow(_wnd, nullptr, nullptr, RDW_INTERNALPAINT);
 		}
+
+		void title(std::string_view text)
+		{
+			SetWindowTextW(_wnd, wstr(text).c_str());
+		}
 	};
 
 	class Renderer
@@ -391,5 +398,9 @@ namespace oui
 	void Window::redraw()
 	{
 		_renderer->window.requestRedraw();
+	}
+	void Window::title(std::string_view text)
+	{
+		_renderer->window.title(text);
 	}
 }
