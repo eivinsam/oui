@@ -1,7 +1,4 @@
 #include "..\include\oui_window.h"
-/* An example of the minimal Win32 & OpenGL program.  It only works in
-16 bit color modes or higher (since it doesn't create a
-palette). */
 
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
@@ -30,7 +27,7 @@ namespace oui
 	class SystemWindow;
 	LONG WINAPI WindowProc(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
-		static std::unordered_map<UINT, std::string> msg_names =
+		static const std::unordered_map<UINT, std::string> msg_names =
 		{
 		{ WM_NULL	 , "WM_NULL"     },
 		{ WM_CREATE	 , "WM_CREATE"   },
@@ -83,8 +80,8 @@ namespace oui
 		else if (!found->second.empty())
 			debug::println(found->second);
 
-		auto get_point_lparam = [](LPARAM p) { return oui::Point{ float(GET_X_LPARAM(p)), float(GET_Y_LPARAM(p)) }; };
-		auto get_vector_lparam = [](LPARAM p) { return oui::Vector{ float(GET_X_LPARAM(p)), float(GET_Y_LPARAM(p)) }; };
+		const auto get_point_lparam = [](LPARAM p) { return oui::Point{ float(GET_X_LPARAM(p)), float(GET_Y_LPARAM(p)) }; };
+		const auto get_vector_lparam = [](LPARAM p) { return oui::Vector{ float(GET_X_LPARAM(p)), float(GET_Y_LPARAM(p)) }; };
 
 		const auto window = [wnd] 
 		{ 
@@ -171,12 +168,19 @@ namespace oui
 			ReleaseCapture();
 			input.mouse.release(get_point_lparam(lParam));
 			return 0;
+		case WM_SYSCOMMAND:
+			if (wParam == SC_KEYMENU)
+				return 0;
+			break;
 		case WM_KEYDOWN:
+		case WM_SYSKEYDOWN:
 			if (input.keydown)
 				input.keydown(static_cast<Key>(wParam));
+			break;
 		default:
-			return DefWindowProc(wnd, msg, wParam, lParam);
+			break;
 		}
+		return DefWindowProc(wnd, msg, wParam, lParam);
 	}
 
 	bool dispatchMessages()
@@ -264,6 +268,8 @@ namespace oui
 				//dispatchMessages();
 			}
 		}
+
+		void close() { PostMessage(_wnd, WM_CLOSE, 0, 0); }
 
 		void registrate(Window& w) { windows[_wnd] = &w; }
 
@@ -383,6 +389,10 @@ namespace oui
 	{
 		glClearColor(c.r, c.g, c.b, 1);
 		glClear(GL_COLOR_BUFFER_BIT);
+	}
+	void Window::close() 
+	{ 
+		_renderer->window.close();
 	}
 	unsigned Window::dpi() const
 	{

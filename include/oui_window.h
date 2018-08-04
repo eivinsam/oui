@@ -10,7 +10,7 @@ namespace oui
 	class Window
 	{
 		std::unique_ptr<Renderer> _renderer;
-		bool _open = true;
+		volatile bool _open = true;
 	public:
 		Vector size;
 
@@ -29,7 +29,7 @@ namespace oui
 
 		void clear(const Color&);
 
-		constexpr void close() { _open = false; }
+		void close();
 		constexpr bool open() const { return _open; }
 
 		unsigned dpi() const;
