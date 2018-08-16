@@ -76,7 +76,7 @@ namespace oui
 		};
 		auto found = msg_names.find(msg);
 		if (found == msg_names.end())
-			debug::println(std::to_string(msg));
+			debug::println(debug::hex(msg));
 		else if (!found->second.empty())
 			debug::println(found->second);
 
@@ -92,7 +92,7 @@ namespace oui
 		static bool in_sizemove = false;
 		static const auto apply_size = [](HWND wnd, Window& window)
 		{
-			debug::println(std::to_string(window.size.x) + "x" + std::to_string(window.size.y));
+			debug::println(window.size.x, "x", window.size.y);
 			glViewport(0, 0, GLsizei(window.size.x), GLsizei(window.size.y));
 
 			if (window.resize)
