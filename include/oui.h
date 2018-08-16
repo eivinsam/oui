@@ -361,9 +361,10 @@ namespace oui
 		backspace = 0x8, tab,
 		enter = 0xd,
 		alt = 0x12,
-		space = 0x20, pgup, pgdn, end, home, left, up, right, down,
+		space = ' ', pgup, pgdn, end, home, left, up, right, down,
 		ins = 0x2d, del,
-		a = 0x41, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z,
+		n0 = '0', n1, n2, n3, n4, n5, n6, n7, n8, n9,
+		a = 'A', b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z,
 		f1 = 0x70, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12
 	};
 
