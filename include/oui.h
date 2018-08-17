@@ -239,6 +239,8 @@ namespace oui
 		return { r.min + c * (r.max - r.min), *this };
 	}
 
+	void shift(Vector offset);
+
 	namespace align
 	{
 		static constexpr Align min{ 0.0f };

@@ -1,3 +1,4 @@
+#include "..\include\oui.h"
 #include "oui.h"
 
 #include <GL/glew.h>
@@ -13,5 +14,9 @@ namespace oui
 		glVertex2f(area.max.x, area.max.y);
 		glVertex2f(area.max.x, area.min.y);
 		glEnd();
+	}
+	void shift(Vector offset)
+	{
+		glTranslatef(offset.x, offset.y, 0);
 	}
 }
