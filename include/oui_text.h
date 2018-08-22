@@ -33,8 +33,8 @@ namespace oui
 	public:
 		VectorFont(const std::string& name);
 
-		void drawLine(const Point& start, std::string_view, float height, const Color& = colors::white);
-		void drawLine(const Point& start, std::string_view text, const Color& color, float height)
+		float drawLine(const Point& start, std::string_view, float height, const Color& = colors::white);
+		float drawLine(const Point& start, std::string_view text, const Color& color, float height)
 		{
 			return drawLine(start, text, height, color);
 		}
