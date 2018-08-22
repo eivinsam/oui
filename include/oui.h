@@ -63,6 +63,8 @@ namespace oui
 		float x = 0;
 		float y = 0;
 
+		constexpr Vector operator-() const { return { -x, -y }; }
+
 		constexpr Vector& operator+=(Vector v) { x += v.x; y += v.y; return *this; }
 	};
 
