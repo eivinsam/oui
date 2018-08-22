@@ -27,6 +27,7 @@ namespace oui
 	class SystemWindow;
 	LONG WINAPI WindowProc(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
+		constexpr int already_down_mask = 1 << 30;
 		static const std::unordered_map<UINT, std::string> msg_names =
 		{
 		{ WM_NULL	 , "WM_NULL"     },
@@ -175,7 +176,8 @@ namespace oui
 		case WM_KEYDOWN:
 		case WM_SYSKEYDOWN:
 			if (input.keydown)
-				input.keydown(static_cast<Key>(wParam));
+				input.keydown(static_cast<Key>(wParam), 
+				(lParam&already_down_mask ? PrevKeyState::down : PrevKeyState::up));
 			break;
 		default:
 			break;
