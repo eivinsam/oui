@@ -189,6 +189,7 @@ namespace oui
 	inline constexpr Rectangle operator-(const Rectangle& r, Vector v) { return { r.min - v, r.max - v }; }
 
 	void fill(const Rectangle&, const Color&);
+	void line(const Point&, const Point&, const Color&, float thickness=1);
 
 	inline constexpr bool Point::in(const Rectangle& area) const
 	{

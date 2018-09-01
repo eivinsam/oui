@@ -15,6 +15,15 @@ namespace oui
 		glVertex2f(area.max.x, area.min.y);
 		glEnd();
 	}
+	void line(const Point& a, const Point& b, const Color& color, float thickness)
+	{
+		glColor4f(color.r, color.g, color.b, color.a);
+		glLineWidth(thickness);
+		glBegin(GL_LINES);
+		glVertex2f(a.x, a.y);
+		glVertex2f(b.x, b.y);
+		glEnd();
+	}
 	void shift(Vector offset)
 	{
 		glTranslatef(offset.x, offset.y, 0);
