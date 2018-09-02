@@ -363,9 +363,9 @@ namespace oui
 	enum class Key : short
 	{
 		lButton = 1, rButton, cancel, mButton,
-		backspace = 0x8, tab,
+		backspace = 0x8, tab, 
 		enter = 0xd,
-		alt = 0x12,
+		shift = 0x10, ctrl, alt, menu, pause, capital, 
 		space = ' ', pgup, pgdn, end, home, left, up, right, down,
 		ins = 0x2d, del,
 		n0 = '0', n1, n2, n3, n4, n5, n6, n7, n8, n9,
@@ -383,6 +383,7 @@ namespace oui
 		Pointer mouse;
 
 		Handler<Key, PrevKeyState> keydown;
+		Handler<Key> keyup;
 		Handler<int> character;
 	};
 

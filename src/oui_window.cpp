@@ -259,6 +259,11 @@ namespace oui
 				input.keydown(static_cast<Key>(wParam), 
 				(lParam&already_down_mask ? PrevKeyState::down : PrevKeyState::up));
 			break;
+		case WM_KEYUP:
+		case WM_SYSKEYUP:
+			if (input.keyup)
+				input.keyup(static_cast<Key>(wParam));
+			break;
 		default:
 			break;
 		}
