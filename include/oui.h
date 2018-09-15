@@ -188,8 +188,24 @@ namespace oui
 
 	inline constexpr Rectangle operator-(const Rectangle& r, Vector v) { return { r.min - v, r.max - v }; }
 
-	void fill(const Rectangle&, const Color&);
-	void line(const Point&, const Point&, const Color&, float thickness=1);
+	enum class Blend : char { normal, multiply };
+
+	struct LineThickness
+	{
+		float value;
+
+		explicit LineThickness(float v) : value{ v } { }
+	};
+
+	void set(const Color&);
+	void set(Blend);
+	void set(LineThickness);
+
+	void fill(const Rectangle&);
+	void fill(const Rectangle&);
+	void line(const Point&, const Point&);
+	
+	
 
 	inline constexpr bool Point::in(const Rectangle& area) const
 	{

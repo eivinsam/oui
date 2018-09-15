@@ -2,12 +2,31 @@
 #include "oui.h"
 
 #include <GL/glew.h>
+#include <cassert>
 
 namespace oui
 {
-	void fill(const Rectangle& area, const Color& color)
+	void set(const Color& color)
 	{
-		glColor4f(color.r, color.g, color.b, color.a);
+		glColor4fv(&color.r);
+	}
+	void set(Blend blend)
+	{
+		switch (blend)
+		{
+		case Blend::normal:   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); return;
+		case Blend::multiply: glBlendFunc(GL_DST_COLOR, GL_ZERO); return;
+		default:
+			assert(false);
+		}
+	}
+	void set(LineThickness thickness)
+	{
+		glLineWidth(thickness.value);
+	}
+
+	void fill(const Rectangle& area)
+	{
 		glBegin(GL_QUADS);
 		glVertex2f(area.min.x, area.min.y);
 		glVertex2f(area.min.x, area.max.y);
@@ -15,13 +34,11 @@ namespace oui
 		glVertex2f(area.max.x, area.min.y);
 		glEnd();
 	}
-	void line(const Point& a, const Point& b, const Color& color, float thickness)
+	void line(const Point& a, const Point& b)
 	{
-		glColor4f(color.r, color.g, color.b, color.a);
-		glLineWidth(thickness);
 		glBegin(GL_LINES);
-		glVertex2f(a.x, a.y);
-		glVertex2f(b.x, b.y);
+		glVertex2fv(&a.x);
+		glVertex2fv(&b.x);
 		glEnd();
 	}
 	void shift(Vector offset)
