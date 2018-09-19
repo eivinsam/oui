@@ -131,6 +131,12 @@ static_assert(std::string_view(msg_lookup[WM_DWMSENDICONICLIVEPREVIEWBITMAP]) ==
 
 namespace oui
 {
+	bool pressed(Key k)
+	{
+		return (GetKeyState(static_cast<int>(k)) & 0x8000) != 0;
+	}
+
+
 	Input input;
 
 	HWND _focus_wnd = nullptr;

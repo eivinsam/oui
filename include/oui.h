@@ -390,6 +390,8 @@ namespace oui
 	};
 	enum class PrevKeyState : char { up, down };
 
+	bool pressed(Key);
+
 	class Input
 	{
 	public:
