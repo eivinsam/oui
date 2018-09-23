@@ -381,6 +381,7 @@ namespace oui
 		backspace = 0x8, tab, 
 		enter = 0xd,
 		shift = 0x10, ctrl, alt, menu, pause, capital, 
+		escape = 0x1b,
 		space = ' ', pgup, pgdn, end, home, left, up, right, down,
 		ins = 0x2d, del,
 		n0 = '0', n1, n2, n3, n4, n5, n6, n7, n8, n9,
