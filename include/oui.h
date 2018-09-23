@@ -27,8 +27,7 @@ namespace oui
 
 	inline constexpr Color mix(const Color& a, const Color& b, double c)
 	{
-		const auto fc = static_cast<float>(c);
-		return a * (1 - fc) + b * fc;
+		return a * (1 - c) + b * c;
 	}
 
 	namespace colors
@@ -194,7 +193,7 @@ namespace oui
 	{
 		float value;
 
-		explicit LineThickness(float v) : value{ v } { }
+		explicit constexpr LineThickness(float v) noexcept : value{ v } { }
 	};
 
 	void set(const Color&);
