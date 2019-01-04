@@ -7,6 +7,23 @@
 
 namespace oui
 {
+	std::string resolve(NativeFont font, FontFace face)
+	{
+		const char* files[][4] =
+		{
+		{ "segoeui.ttf", "segoeuib.ttf", "segoeuii.ttf", "segoeuiz.ttf" },
+		{ "Constan.TTF", "Constanb.TTF", "Constani.TTF", "Constanz.TTF" },
+		{ "Consola.ttf", "Consolab.ttf", "Consolai.ttf", "Consolaz.ttf" }
+		};
+
+		static const std::string path = "C:\\Windows\\Fonts\\";
+
+		return path + files[static_cast<char>(font)][static_cast<char>(face)];
+	}
+
+
+
+
 	using uchar = unsigned char;
 
 	int popCodepoint(std::string_view& text)

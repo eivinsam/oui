@@ -16,6 +16,8 @@
 #include <oui_unicode.h>
 #include <oui_debug.h>
 
+#include <stdexcept>
+
 static constexpr const char* msg_lookup[] =
 {
 	/*000*/"NULL", "CREATE", "DESTROY", "MOVE",

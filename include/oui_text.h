@@ -7,6 +7,11 @@
 
 namespace oui
 {
+	enum class NativeFont : char { sans, serif, mono };
+	enum class FontFace : char { normal, bold, italic, bold_italic };
+
+	std::string resolve(NativeFont, FontFace = FontFace::normal);
+
 	class Font
 	{
 		class Data;
