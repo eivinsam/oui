@@ -278,7 +278,7 @@ namespace oui
 		glEnableVertexAttribArray(0);
 
 		const auto asc = _face->ascender * _rem;
-		const auto h = _face->height * _rem;
+		const auto h = (_face->ascender - _face->descender) * _rem;
 
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
