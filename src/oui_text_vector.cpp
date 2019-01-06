@@ -203,7 +203,7 @@ namespace oui
 
 		float offset(std::string_view text, float height);
 
-		float drawLine(const Point& start, std::string_view text, float height, const Color& color);
+		float drawLine(const Point& start, std::string_view text, float height);
 	};
 
 
@@ -270,7 +270,7 @@ namespace oui
 			result += _init_glyph(ch, false).advance*height;
 		return result;
 	}
-	float VectorFont::Data::drawLine(const Point& start, std::string_view text, float height, const Color& color)
+	float VectorFont::Data::drawLine(const Point& start, std::string_view text, float height)
 	{
 		Point head = start;
 
@@ -286,7 +286,6 @@ namespace oui
 		glScalef(height, -height, height);
 		glTranslatef(0, -asc+(h-1), 0);
 
-		glColor4fv(&color.r);
 		while (int ch = popCodepoint(text))
 			head.x = _draw_glyph(ch, head, height);
 
@@ -299,10 +298,10 @@ namespace oui
 	VectorFont::VectorFont(const std::string & name) :
 		_data(std::make_shared<Data>(name)) { }
 
-	float VectorFont::drawLine(const Point & start, std::string_view text, float height, const Color & color)
+	float VectorFont::drawLine(const Point & start, std::string_view text, float height)
 	{
 		if (_data)
-			return _data->drawLine(start, text, height, color);
+			return _data->drawLine(start, text, height);
 		return 0;
 	}
 

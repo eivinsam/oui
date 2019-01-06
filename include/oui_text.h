@@ -20,11 +20,7 @@ namespace oui
 	public:
 		Font(const std::string& name, int size);
 
-		void drawLine(const Point& start, std::string_view, float height = 0, const Color& = colors::white);
-		void drawLine(const Point& start, std::string_view text, const Color& color, float height = 0) 
-		{
-			return drawLine(start, text, height, color);
-		}
+		void drawLine(const Point& start, std::string_view, float height = 0);
 
 		float offset(std::string_view text, float height = 0);
 
@@ -38,11 +34,7 @@ namespace oui
 	public:
 		VectorFont(const std::string& name);
 
-		float drawLine(const Point& start, std::string_view, float height, const Color& = colors::white);
-		float drawLine(const Point& start, std::string_view text, const Color& color, float height)
-		{
-			return drawLine(start, text, height, color);
-		}
+		float drawLine(const Point& start, std::string_view, float height);
 
 		float offset(std::string_view text, float height);
 	};

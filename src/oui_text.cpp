@@ -173,15 +173,15 @@ namespace oui
 
 		float offset(std::string_view text, float height);
 
-		void drawLine(const Point& start, std::string_view text, float height, const Color& color);
+		void drawLine(const Point& start, std::string_view text, float height);
 	};
 
 	Font::Font(const std::string& name, int size) : _data(std::make_shared<Data>(name, size)) { }
 
-	void Font::drawLine(const Point & start, std::string_view text, float height, const Color & color)
+	void Font::drawLine(const Point & start, std::string_view text, float height)
 	{
 		if (_data)
-			_data->drawLine(start, text, height, color);
+			_data->drawLine(start, text, height);
 	}
 
 	float Font::offset(std::string_view text, float height)
@@ -195,7 +195,7 @@ namespace oui
 	}
 
 
-	void Font::Data::drawLine(const Point& start, std::string_view text, float height, const Color& color)
+	void Font::Data::drawLine(const Point& start, std::string_view text, float height)
 	{
 		if (height == 0)
 			height = float(_size);
@@ -204,7 +204,6 @@ namespace oui
 		glEnable(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, _tex);
 
-		glColor4fv(&color.r);
 		glBegin(GL_QUADS);
 		while (int ch = popCodepoint(text))
 			head.x = _draw_glyph(ch, head, height/_size);
