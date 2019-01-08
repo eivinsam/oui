@@ -307,11 +307,16 @@ namespace oui
 		Optional<Vector> _delta;
 		Optional<Down> _button;
 	public:
+
+		std::function<void(const Point&)> onMove;
+
 		void move(const Point& new_position)
 		{
 			if (_current)
 				_delta = _delta.value_or(Vector{ 0, 0 }) + (new_position - _current->position);
 			_current = { now(), new_position };
+
+			onMove(new_position);
 		}
 		void press(const Point& position)
 		{
@@ -372,6 +377,12 @@ namespace oui
 				return true;
 			}
 			return false;
+		}
+		Optional<Point> currentPosition() noexcept
+		{
+			if (_current)
+				return _current->position;
+			return {};
 		}
 	};
 
