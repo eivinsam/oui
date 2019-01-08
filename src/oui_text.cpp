@@ -171,7 +171,7 @@ namespace oui
 
 		}
 
-		float offset(std::string_view text, float height);
+		Vector offset(std::string_view text, float height);
 
 		void drawLine(const Point& start, std::string_view text, float height);
 	};
@@ -184,9 +184,9 @@ namespace oui
 			_data->drawLine(start, text, height);
 	}
 
-	float Font::offset(std::string_view text, float height)
+	Vector Font::offset(std::string_view text, float height)
 	{
-		return !_data ? 0.0f : _data->offset(text, height);
+		return !_data ? Vector{0, 0} : _data->offset(text, height);
 	}
 
 	float Font::height() const
@@ -211,14 +211,14 @@ namespace oui
 
 		glDisable(GL_TEXTURE_2D);
 	}
-	float Font::Data::offset(std::string_view text, float height)
+	Vector Font::Data::offset(std::string_view text, float height)
 	{
 		const float factor = (height == 0 ? 1 : (height / _size));
 
 		float result = 0;
 		while (int ch = popCodepoint(text))
 			result += _init_glyph(ch, false).advance*factor;
-		return result;
+		return { result, height };
 	}
 	float Font::Data::_draw_glyph(int ch, Point p, float factor)
 	{

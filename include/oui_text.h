@@ -22,7 +22,7 @@ namespace oui
 
 		void drawLine(const Point& start, std::string_view, float height = 0);
 
-		float offset(std::string_view text, float height = 0);
+		Vector offset(std::string_view text, float height = 0);
 
 		float height() const;
 	};
@@ -36,6 +36,6 @@ namespace oui
 
 		float drawLine(const Point& start, std::string_view, float height);
 
-		float offset(std::string_view text, float height);
+		Vector offset(std::string_view text, float height);
 	};
 }

@@ -305,8 +305,8 @@ namespace oui
 		return 0;
 	}
 
-	float VectorFont::offset(std::string_view text, float height)
+	Vector VectorFont::offset(std::string_view text, float height)
 	{
-		return !_data ? 0.0f : _data->offset(text, height);
+		return { !_data ? 0.0f : _data->offset(text, height), height };
 	}
 }
