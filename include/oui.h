@@ -171,7 +171,7 @@ namespace oui
 				r.min.x = r.max.x = (r.min.x + r.max.x) / 2;
 			if (r.min.y > r.max.y)
 				r.min.y = r.max.y = (r.min.y + r.max.y) / 2;
-			return *this;
+			return r;
 		}
 		constexpr Rectangle shrink(Ratio f) const
 		{
